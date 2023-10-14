@@ -1,6 +1,9 @@
 python ../LMQL_prompt_breeder.py \
      --task answerability \
-     --fitness_test_suite ../data/squad_reqs_fitness_test_suite.json \
+     --fitness_test_suite ../data/fitness_test_suites/squad_reqs_fitness_test_suite.json \
+     --is_async \
+     --server_batch_size 4 \
+     --client_batch_size 50 \
      --use_wandb \
      --verbose \
      --test_CoT \

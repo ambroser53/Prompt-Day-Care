@@ -785,7 +785,7 @@ def get_args():
     parser.add_argument('--decoder_options_override', help='Decoder options string to use instead of task description definition (default: %(default)s)', default=None)
     parser.add_argument('--client_batch_size', help='Batch size for client-side async querying (LMQL async querying) (default: %(default)s)', default=1, type=int)
     parser.add_argument('--server_batch_size', help='Batch size for use in on the inference with the model (LMQL async querying) (default: %(default)s)', default=1, type=int)
-    parser.add_argument('--fitness_test_suite', help='Fitness test suite to use (default: %(default)s)', default='./data/fitness_test_suite.json')
+    parser.add_argument('--fitness_test_suite', help='Fitness test suite to use (default: %(default)s)', default='./data/fitness_test_suites/squad_reqs_fitness_test_suite.json')
     parser.add_argument('--population_size', help='Number of units in the population (default: %(default)s)', default=50, type=int)
     parser.add_argument('--initial_prompts_per_unit', help='Number of prompts to generate for each unit in the initial population (default: %(default)s)', default=2, type=int)
     parser.add_argument('--evolution_generations', help='Number of generations to evolve the population (default: %(default)s)', default=20, type=int)
