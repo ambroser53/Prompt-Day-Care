@@ -3,12 +3,16 @@ import pickle
 import shutil
 
 import time
+from itertools import compress
+
 import lmql
 import json
 import hjson
 import random
 import argparse
 import hashlib
+
+import nest_asyncio
 from tqdm import tqdm
 from utils import fitness_scorers
 from utils.bert_filterer import BertFilterer
@@ -90,6 +94,10 @@ def clean_newborn(new_born):
     return new_born
 
 
+def get_genome_by_id(population, genome_id):
+    return next((g for g in population if g['id'] == genome_id), None)
+
+
 class DayCare:
     def __init__(
             self,
@@ -138,8 +146,7 @@ class DayCare:
             seed = config.pop('seed')
             kwargs = config
         else:
-            previous_runs = [int(x[0][-1]) for x in os.walk(day_care_dir + task + '/') if
-                             x[0][-1] != 'G' and x[0][-1] != '/']
+            previous_runs = [int(x[-1]) for x in os.listdir(os.path.join(day_care_dir, task)) if x[0:3] == 'RUN']
             if len(previous_runs) == 0:
                 next_run_num = 0
             else:
@@ -318,10 +325,11 @@ class DayCare:
             'mutation_eda_random',
             'mutation_eda_ranked',
             'mutation_eda_lineage',
-            'mutation_lamarckian',
             'hypermutation_zero_order_direct',
             'hypermutation_first_order_direct',
         ]
+        if self.test_CoT:
+            mutation_operators.append('mutation_lamarckian_direct')
 
         if kwargs.get('debug_mode', False):
             # in debug mode go through each mutation sequentially
@@ -399,7 +407,7 @@ class DayCare:
                     next_population.append(elite_genome)
 
             # get stats on last generation
-            population_fitness = [g['fitness'] for g in self.population if 'fitness' in g.keys()]
+            population_fitness = [g['fitness']['best'] for g in self.population if 'fitness' in g.keys()]
             population_CoT_fitness = [g['fitness']['CoT'] for g in self.population if 'fitness' in g.keys()]
             population_noCoT_fitness = [g['fitness']['noCoT'] for g in self.population if 'fitness' in g.keys()]
 
@@ -472,18 +480,16 @@ class DayCare:
             fitness_results[genome_id]['CoT' if CoT else 'noCoT'].append(fitness)
 
         for genome_id, fitnesses in fitness_results.items():
-            genome = next((g for g in self.population if g['id'] == genome_id), None)
+            genome = get_genome_by_id(self.population, genome_id)
 
             CoT_fitness_evals = fitnesses['CoT']
             noCoT_fitness_evals = fitnesses['noCoT']
 
-            # TODO Where to slot in correct reasoning tracking?
-            # if ((test_result['REQUIREMENT'] == ' Yes' and q['gold_' + self.task] == True) or
-            #         (test_result['REQUIREMENT'] == ' No' and q['gold_' + self.task] == False)):
-            #     if specimen_str in self.correct_reasonings.keys():
-            #         self.correct_reasonings[specimen_str].append(test_result['REASONING'])
-            #     else:
-            #         self.correct_reasonings[specimen_str] = [test_result['REASONING']]
+            # add in correct reasonings
+            if self.test_CoT:
+                for correct_fitness in list(
+                        compress(CoT_fitness_evals, self.fitness_scorer.get_truths(CoT_fitness_evals))):
+                    self.correct_reasonings[genome_id] = correct_fitness['REASONING']
 
             if self.test_CoT:
                 CoT = self.fitness_scorer(CoT_fitness_evals)
@@ -612,10 +618,10 @@ class DayCare:
             return alternate_mutant
 
     async def mutation_lamarckian(self, genome):
-        str_genome = self.str_format_genome(genome)
-        if str_genome not in self.correct_reasonings.keys():
-            str_genome = random.choice(list(self.correct_reasonings.keys()))
-        task_prompt_correct_reasonings = self.correct_reasonings[str_genome]
+        if (genome_id := genome['id']) not in self.correct_reasonings.keys():
+            genome_id = random.choice(list(self.correct_reasonings.keys()))
+        str_genome = self.str_format_genome(get_genome_by_id(self.population, genome_id))
+        task_prompt_correct_reasonings = self.correct_reasonings[genome_id]
         input_reasonings = random.sample(task_prompt_correct_reasonings,
                                          min(self.num_lamarckian_reasonings, len(task_prompt_correct_reasonings)))
         unit = {
@@ -881,5 +887,8 @@ def main(args):
 
 if __name__ == '__main__':
     args = get_args()
+    # fixes for multiprocessing
+    torch.multiprocessing.set_start_method('spawn')
+    nest_asyncio.apply()
     print("Verbose on? " + str(args.verbose))
     main(args)
