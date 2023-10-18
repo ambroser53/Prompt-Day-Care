@@ -1,6 +1,8 @@
 import os
 import pickle
 import shutil
+from glob import glob
+import re
 
 import time
 from itertools import compress
@@ -98,6 +100,12 @@ def get_genome_by_id(population, genome_id):
     return next((g for g in population if g['id'] == genome_id), None)
 
 
+def get_next_run_number(path: str) -> int:
+    runs = glob(os.path.join(path, '**/RUN_[0-9]*'), recursive=True)
+    dirs = [int(re.search(r'RUN_([0-9]+)$', run).group(1)) for run in runs if os.path.isdir(run)]
+    return max(dirs) + 1 if dirs else 0
+
+
 class DayCare:
     def __init__(
             self,
@@ -146,11 +154,7 @@ class DayCare:
             seed = config.pop('seed')
             kwargs = config
         else:
-            previous_runs = [int(x[-1]) for x in os.listdir(os.path.join(day_care_dir, task)) if x[0:3] == 'RUN']
-            if len(previous_runs) == 0:
-                next_run_num = 0
-            else:
-                next_run_num = max(previous_runs) + 1
+            next_run_num = get_next_run_number(os.path.join(day_care_dir, task))
             self.output_dir = day_care_dir + task + '/RUN_' + str(next_run_num) + '/'
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
@@ -329,7 +333,7 @@ class DayCare:
             'hypermutation_first_order_direct',
         ]
         if self.test_CoT:
-            mutation_operators.append('mutation_lamarckian_direct')
+            mutation_operators.append('mutation_lamarckian')
 
         if kwargs.get('debug_mode', False):
             # in debug mode go through each mutation sequentially
@@ -468,8 +472,14 @@ class DayCare:
             if 'fitness' not in genome.keys():
                 async_fitness_tasks.extend(self.get_fitness_tests(genome, fitness_suite))
 
+        start = time.time()
+
         fitness_results = {}
-        for genome_id, fitness, CoT in await asyncio.gather(*async_fitness_tasks):
+        for genome_id, fitness, CoT in await asyncio.gather(*async_fitness_tasks, return_exceptions=True):
+            if isinstance(fitness, Exception):
+                logging.error(f"Error Type: {type(fitness).__name__}, Error: {fitness}")
+                continue
+
             # get genome by id
             if genome_id not in fitness_results.keys():
                 fitness_results[genome_id] = {
@@ -478,6 +488,12 @@ class DayCare:
                 }
 
             fitness_results[genome_id]['CoT' if CoT else 'noCoT'].append(fitness)
+
+        if wandb.run is not None:
+            wandb.log({
+                'mean_time_for_fitness_tests': (time.time() - start) / len(async_fitness_tasks),
+                'total_time_for_fitness_tests': time.time() - start,
+            })
 
         for genome_id, fitnesses in fitness_results.items():
             genome = get_genome_by_id(self.population, genome_id)
@@ -488,7 +504,7 @@ class DayCare:
             # add in correct reasonings
             if self.test_CoT:
                 for correct_fitness in list(
-                        compress(CoT_fitness_evals, self.fitness_scorer.get_truths(CoT_fitness_evals))):
+                        compress(CoT_fitness_evals, self.fitness_scorer.get_correct(CoT_fitness_evals))):
                     self.correct_reasonings[genome_id] = correct_fitness['REASONING']
 
             if self.test_CoT:
