@@ -1,0 +1,10 @@
+{
+  "task_description": "The answer provided with the question is considered to be of 'quality' if it meets the following requirements of a quality question: the answer sufficiently answers the question, the answer is as concise as possible without losing meaning. Evaluate whether the answer provided with the question is considered to be quality. Provide a Yes or No answer.",
+  "fitness_scorer": {
+    "type": "BinaryfBeta",
+    "beta": 0.5
+  },
+  "decoder_options": "argmax",
+  "fitness_decoder_options": "sample(n=2, temperature=0.7, top_k=0, repetition_penalty=1.1, top_p=0.7)",
+  "fixed_system_prompt": null
+}

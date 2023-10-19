@@ -1,0 +1,10 @@
+{
+  "task_description": "A question is considered answerable if it meets the following requirements of a quality question: There is a single span in the input text which answers the question, the span must be a contiguous substring of the text, there must be no other spans which are also correct answers, said span must be a coherent phrase on its own. Evaluate whether the answer provided with the question is considered to be quality. Provide a Yes or No answer.",
+  "fitness_scorer": {
+    "type": "BinaryfBeta",
+    "beta": 0.5
+  },
+  "decoder_options": "argmax",
+  "fitness_decoder_options": "sample(n=2, temperature=0.7, top_k=0, repetition_penalty=1.1, top_p=0.7)",
+  "fixed_system_prompt": null
+}
