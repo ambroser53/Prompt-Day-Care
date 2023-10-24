@@ -1,9 +1,0 @@
-{
-  "task_description": "The answer provided with the question is considered to be of 'quality' if it meets the following requirements of a quality question: the answer sufficiently answers the question, the answer is as concise as possible without losing meaning. Evaluate whether the answer provided with the question is considered to be quality. Provide a Yes or No answer.",
-  "fitness_scorer": {
-    "type": "BinaryfBeta",
-    "beta": 1.0
-  },
-  "decoder_options": "beam_sample(n=2, temperature=0.7, top_k=0, repetition_penalty=1.1, top_p=0.7)",
-  "fixed_system_prompt": "You are a prompt engineer creating better prompts for specific tasks. You are to create a prompt for the task in the way specified. Each prompt has three components: the system-prompt specifies the role the model must play, the task-prompt specifies what the model is being asked to do and the reasoning-prompt specifies how the model should provide reasoning."
-}
