@@ -14,9 +14,9 @@ import json
 
 
 def get_next_run_number(path: str) -> int:
-        runs = glob(os.path.join(path, 'RUN_[0-9]*'))
-        dirs = [int(re.search(r'RUN_([0-9]+)$', run).group(1)) for run in runs if os.path.isdir(run)]
-        return max(dirs) + 1 if dirs else 0
+    runs = glob(os.path.join(path, 'RUN_[0-9]*'))
+    dirs = [int(re.search(r'RUN_([0-9]+)$', run).group(1)) for run in runs if os.path.isdir(run)]
+    return max(dirs) + 1 if dirs else 0
 
 def set_seed(seed: int) -> None:
     random.seed(seed)

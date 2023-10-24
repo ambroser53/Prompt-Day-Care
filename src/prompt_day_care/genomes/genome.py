@@ -29,6 +29,7 @@ class Genome:
 
         return Genome(**genome)
     
-    def __repr__(self):
-        return f'Genome({self.fitness_scorer}, SYSTEM PROMPT: {self.system_prompt}, \
-            TASK PROMPT: {self.task_prompt}, REASONING PROMPT: {self.reasoning_prompt})'
+    def __str__(self):
+        return f'SYSTEM PROMPT: {self.system_prompt} \
+                 TASK PROMPT: {self.task_prompt} \
+                 REASONING PROMPT: {self.reasoning_prompt})'
