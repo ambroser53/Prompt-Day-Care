@@ -1,11 +1,12 @@
 import os
 from glob import glob
-from prompt_day_care.genomes.genome import Genome
+from prompt_day_care.genomes import Genome
 from prompt_day_care.utils.config import Config
 from prompt_day_care.fitness_scorers.fitness_scorer import FitnessScorer
 from prompt_day_care.mutators.mutator import Mutator
+from prompt_day_care.mutators.direct_mutators import ZeroOrderDirect
 import re
-from typing import List
+from typing import List, Dict, Any
 import random
 import numpy as np
 from torch import manual_seed
@@ -26,7 +27,7 @@ def set_seed(seed: int) -> None:
 
 
 class DayCare:
-    def __init__(self, mutators: List[Mutator], fitness_scorer: FitnessScorer, output_dir: str, **kwargs) -> None:
+    def __init__(self, model, mutators: List[Mutator], fitness_scorer: FitnessScorer, output_dir: str, fitness_tests: Dict[str, Any], **kwargs) -> None:
         if len(kwargs.get('population', [])) < 2 or kwargs.get('population_size', 0) < 2:
             raise ValueError('Must provide "population_size" or an "population" of at least size 2')
         
@@ -38,18 +39,38 @@ class DayCare:
 
         self.config = Config(**kwargs)
 
+        self.model = model
         self.mutators = mutators
         self.fitness_scorer = fitness_scorer
+        self.fitness_tests = fitness_tests
 
         # TODO: continue run if loaded from generation instead of making a new run
         run_number = get_next_run_number(output_dir)
         self.output_dir = os.path.join(output_dir, f'RUN_{run_number}')
         os.makedirs(self.output_dir)
-
         # TODO: Finish init function
 
+
     def _initialise_population(self, population_size: int, prompts_per_unit: int) -> None:
-        pass
+        mutator = ZeroOrderDirect(self.model, self.mutation_prompts, self.thinking_styles, self.task_prompts, self.task_description, self.seed)
+        self.population = [Genome(self.fitness_scorer, **mutator.mutate()) for _ in range(population_size*prompts_per_unit)]
+
+
+    def breed(self) -> None:
+        if self.generation_number == 0:
+            self.config.generation_number = generation
+            self.save_generation()
+
+        for generation in range(self.config.generation_number, self.config.generations):
+            for genome in self.population:
+                # TODO: decide on method to select subset or all fitness tests
+                genome.detemine_fitness(self.fitness_tests)
+
+            self.population = self.genome_selector(self.population)
+
+            self.config.generation_number = generation
+            self.save_generation()
+
 
     @classmethod
     def from_generation(cls, path: str) -> 'DayCare':

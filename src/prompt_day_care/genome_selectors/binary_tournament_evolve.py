@@ -1,5 +1,5 @@
 from typing import List
-from prompt_day_care.genomes.genome import Genome
+from prompt_day_care.genomes import Genome
 from prompt_day_care.fitness_scorers.fitness_scorer import FitnessScorer
 from prompt_day_care.mutators.mutator import Mutator
 import random

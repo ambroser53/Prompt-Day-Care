@@ -1,17 +1,21 @@
 import os
 import json
+from typing import Dict, Any
 
 class Genome:
-    def __init__(self, fitness_scorer, system_prompt, task_prompt, reasoning_prompt):
+    def __init__(self, fitness_scorer, system_prompt=None, task_prompt=None, reasoning_prompt=None):
         self.fitness_scorer = fitness_scorer
         self.id = hash(self)
         self.system_prompt = system_prompt
         self.task_prompt = task_prompt
         self.reasoning_prompt = reasoning_prompt
+        self.fitness = None
     
-    def determine_fitness(self, fitness_evals):
-        # TODO: Should this be here?
-        pass
+    def determine_fitness(self, fitness_tests: Dict[str, Any]):
+        if self.fitness is None:
+            raise NotImplementedError
+
+        return self.fitness
 
     def to_disk(self, path: str) -> None:
         save_file = os.path.join(path, f'{self.id}.genome')

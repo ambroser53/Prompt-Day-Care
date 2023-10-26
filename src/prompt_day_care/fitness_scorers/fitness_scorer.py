@@ -1,5 +1,5 @@
 from typing import Union, List
-from prompt_day_care.genomes.genome import Genome
+from prompt_day_care.genomes import Genome
 
 class FitnessScorer:
     def __call__(self, *args, **kwargs):
