@@ -53,7 +53,8 @@ class DayCare:
 
     def _initialise_population(self, population_size: int, prompts_per_unit: int) -> None:
         mutator = ZeroOrderDirect(self.model, self.mutation_prompts, self.thinking_styles, self.task_prompts, self.task_description, self.seed)
-        self.population = [Genome(self.fitness_scorer, **mutator.mutate()) for _ in range(population_size*prompts_per_unit)]
+        self.population = self.model.generate([mutator.mutate() for _ in range(population_size*prompts_per_unit)])
+
 
 
     def breed(self) -> None:

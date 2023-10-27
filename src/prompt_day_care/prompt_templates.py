@@ -1,9 +1,17 @@
 from typing import Optional
 
 class Template:
+    template_with_input: str
+    template_no_input: str
+
     @classmethod
     def generate_prompt(self, **kwargs):
         raise NotImplementedError
+
+    @classmethod
+    def get_response(self, prompt: str):
+        raise NotImplementedError
+
 
 class AlpacaTemplate:
     template_with_input = "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n"
@@ -20,3 +28,7 @@ class AlpacaTemplate:
             res += label
 
         return res
+
+    @classmethod
+    def get_response(self, prompt: str):
+        return prompt.split('### Response:\n')[1]
